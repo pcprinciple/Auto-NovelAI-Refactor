@@ -125,11 +125,24 @@ def main(
                 "nai-diffusion-4-full": "v4full",
                 "nai-diffusion-4-curated-preview": "v4curated",
             }
-            vibe_data = read_json(naiv4vibebundle_file)
+            vibe_data = read_json(naiv4vibebundle_file) or {}
             vibe_model_name = model_vibe_map.get(model)
-            for vibe_image in vibe_data["vibes"]:
-                reference_image_multiple.append(return_last_value(vibe_image["encodings"][vibe_model_name])["encoding"])
-                reference_strength_multiple.append(vibe_image["importInfo"]["strength"])
+            if not vibe_model_name:
+                logger.warning(f"未找到 {model} 对应的 vibe 模型，跳过参考图。")
+            else:
+                vibe_images = vibe_data.get("vibes", [])
+                if not vibe_images:
+                    logger.warning("vibe bundle 中未包含 'vibes' 字段，参考图已忽略。")
+                for vibe_image in vibe_images:
+                    encodings = vibe_image.get("encodings", {})
+                    model_encodings = encodings.get(vibe_model_name)
+                    if not model_encodings:
+                        logger.warning(
+                            f"vibe 图像缺少 {vibe_model_name} 编码，文件: {naiv4vibebundle_file}，条目已跳过。"
+                        )
+                        continue
+                    reference_image_multiple.append(return_last_value(model_encodings)["encoding"])
+                    reference_strength_multiple.append(vibe_image.get("importInfo", {}).get("strength", 1))
     else:
         if character_reference_image and model in ["nai-diffusion-4-5-full", "nai-diffusion-4-5-curated"]:
             process_image_by_orientation(character_reference_image).save(
@@ -228,9 +241,13 @@ def main(
                 director_reference_secondary_strength_values=director_reference_secondary_strength_values,
             )
 
-            if inpaint_input_image["background"]:
+            if inpaint_input_image and inpaint_input_image.get("background"):
                 (inpaint_input_image["background"]).save(image_path := "./outputs/temp_inpaint_image.png")
-                (inpaint_input_image["layers"][0]).save(mask_path := "./outputs/temp_inpaint_mask.png")
+                layers = inpaint_input_image.get("layers") or []
+                if not layers:
+                    logger.warning("检测到基础图片但未提供图层，已跳过 Inpaint 处理。")
+                    layers = [inpaint_input_image["background"]]
+                layers[0].save(mask_path := "./outputs/temp_inpaint_mask.png")
 
                 if is_fully_transparent(mask_path):
                     model_function_map = {
@@ -266,7 +283,9 @@ def main(
 
             image_data = generator.generate(json_data)
             if image_data:
-                path = generator.save(image_data, _type, json_data["parameters"]["seed"])
+                parameters_data = json_data.get("parameters") or {}
+                seed_value = parameters_data.get("seed", _seed)
+                path = generator.save(image_data, _type, seed_value)
                 image_list.append(path)
             if quantity != 1 and i != quantity - 1:
                 sleep_for_cool(env.cool_time)

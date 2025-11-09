@@ -271,6 +271,7 @@ with gr.Blocks(
                     sources=["upload", "clipboard", "webcam"],
                     type="pil",
                     label="基础图片(可选)",
+                    visible=False,
                 )
                 strength = gr.Slider(0.01, 0.99, 0.7, step=0.01, label="强度", visible=False, interactive=True)
                 noise = gr.Slider(0, 10, 0, step=0.01, label="噪声", visible=False, interactive=True)
@@ -337,7 +338,7 @@ with gr.Blocks(
                 ai_choice.change(return_position_interactive, inputs=ai_choice, outputs=character_components_list)
             character_reference_tab = gr.Tab(
                 "角色参考",
-                visible=True if _model in ["nai-diffusion-4-5-full", "nai-diffusion-4-5-curated"] else False,
+                visible=False,
             )
             with character_reference_tab:
                 character_reference_image = gr.Image(label="Character Reference Image", type="filepath")
@@ -513,7 +514,7 @@ with gr.Blocks(
                         inputs=[new_wildcard_type, new_wildcard_name, new_wildcard_tags],
                         outputs=output_information,
                     )
-            with gr.Tab("导演工具"):
+            with gr.Tab("导演工具", visible=False):
                 director_input_path = gr.Textbox(label="批处理路径(同时输入路径和图片时仅处理图片)")
                 with gr.Row():
                     director_input_image = gr.Image(type="filepath", label="Input")
@@ -601,7 +602,7 @@ with gr.Blocks(
                     )
                 director_stop_button = gr.Button("停止处理")
                 director_stop_button.click(stop_generate)
-            with gr.Tab("超分降噪"):
+            with gr.Tab("超分降噪", visible=False):
                 upscale_input_path = gr.Textbox(label="批处理路径(同时输入路径和图片时仅处理图片)")
                 with gr.Row():
                     with gr.Column():
@@ -753,7 +754,7 @@ with gr.Blocks(
                         ]
                         + character_components_list,
                     )
-                with gr.Tab("图片反推"):
+                with gr.Tab("图片反推", visible=False):
                     with gr.Row():
                         with gr.Column():
                             tagger_image = gr.Image(type="filepath", label="Input")
@@ -813,7 +814,7 @@ with gr.Blocks(
                         tagger_send_button.click(
                             lambda x: x, inputs=tagger_sorted_general_strings, outputs=positive_input
                         )
-                with gr.Tab("抹除数据"):
+                with gr.Tab("抹除数据", visible=False):
                     with gr.Row():
                         with gr.Column():
                             remove_pnginfo_image = gr.Image(type="numpy", interactive=False, label="单张处理(可选)")
@@ -870,7 +871,7 @@ with gr.Blocks(
                                 ],
                                 outputs=[remove_pnginfo_output_information],
                             )
-            with gr.Tab("图片筛选"):
+            with gr.Tab("图片筛选", visible=False):
                 with gr.Column():
                     with gr.Row():
                         selector_input_path = gr.Textbox(label="图片目录", scale=4)
@@ -919,7 +920,7 @@ with gr.Blocks(
                         inputs=[selector_current_img],
                         outputs=[selector_output_image, selector_current_img],
                     )
-            with gr.Tab("插件商店"):
+            with gr.Tab("插件商店", visible=False):
                 plugin_store_output_information = gr.Textbox(show_label=False, visible=False)
                 with gr.Row():
                     plugin_store_plugin_name = gr.Textbox(label="插件名称")
