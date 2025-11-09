@@ -140,13 +140,15 @@ with gr.Blocks(
     with gr.Row():
         with gr.Column(scale=1):
             with gr.Tab(label="参数设置"):
+                limited_resolutions = ["1024x1024", "832x1216", "1216x832"]
+                current_resolution = "{}x{}".format(parameters.get("width"), parameters.get("height"))
+                if current_resolution in limited_resolutions:
+                    default_width, default_height = map(int, current_resolution.split("x"))
+                else:
+                    default_width, default_height = map(int, limited_resolutions[0].split("x"))
                 resolution = gr.Dropdown(
-                    choices=RESOLUTION + ["自定义"],
-                    value=(
-                        "自定义"
-                        if (res := "{}x{}".format(parameters.get("width"), parameters.get("height"))) not in RESOLUTION
-                        else res
-                    ),
+                    choices=limited_resolutions,
+                    value=current_resolution if current_resolution in limited_resolutions else limited_resolutions[0],
                     label="分辨率预设",
                     interactive=True,
                 )
@@ -154,18 +156,18 @@ with gr.Blocks(
                     width = gr.Slider(
                         minimum=0,
                         maximum=50000,
-                        value=parameters.get("width", 832),
+                        value=default_width,
                         step=64,
                         label="宽",
-                        interactive=True,
+                        interactive=False,
                     )
                     height = gr.Slider(
                         minimum=0,
                         maximum=50000,
-                        value=parameters.get("height", 1216),
+                        value=default_height,
                         step=64,
                         label="高",
-                        interactive=True,
+                        interactive=False,
                     )
                 resolution.change(
                     fn=update_from_dropdown,
@@ -184,8 +186,8 @@ with gr.Blocks(
                 )
                 steps = gr.Slider(
                     minimum=1,
-                    maximum=50,
-                    value=parameters.get("steps", 23),
+                    maximum=28,
+                    value=min(parameters.get("steps", 23), 28),
                     label="采样步数",
                     step=1,
                     interactive=True,
