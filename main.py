@@ -1064,4 +1064,6 @@ anr.launch(
     server_port=env.port,
     favicon_path="./assets/logo.ico",
     allowed_paths=[f"{d}:" for d in string.ascii_uppercase if Path(f"{d}:").exists()],
+    auth=[("admin", "admin123"), ("user", "user123")],
+    auth_message="请输入账户信息以继续",
 )
