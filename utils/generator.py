@@ -2,6 +2,7 @@ import io
 import os
 import zipfile
 from datetime import date
+from pathlib import Path
 
 import requests
 import ujson as json
@@ -10,6 +11,40 @@ from utils import generate_random_str
 from utils.environment import env
 from utils.logger import logger
 from utils.models.headers import headers
+
+MAX_IMAGE_STORAGE_BYTES = 50 * 1024 * 1024
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+
+
+def _list_saved_images(root: Path) -> list[Path]:
+    if not root.exists():
+        return []
+    files: list[Path] = []
+    for path in root.rglob("*"):
+        if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS:
+            files.append(path)
+    files.sort(key=lambda f: f.stat().st_ctime)
+    return files
+
+
+def _enforce_storage_budget(root: Path):
+    files = _list_saved_images(root)
+    total = sum(path.stat().st_size for path in files)
+    while total > MAX_IMAGE_STORAGE_BYTES and files:
+        oldest = files.pop(0)
+        try:
+            size = oldest.stat().st_size
+        except FileNotFoundError:
+            continue
+        try:
+            oldest.unlink()
+            total -= size
+            logger.info(f"已删除旧图片以释放空间: {oldest}")
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            logger.warning(f"无法删除 {oldest}: {exc}")
+            break
 
 
 def inquire_anlas():
@@ -86,4 +121,5 @@ class Generator:
             base_path += ".png"
             with open(base_path, "wb") as file:
                 file.write(image_data)
+            _enforce_storage_budget(Path("./outputs"))
             return base_path

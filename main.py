@@ -1077,6 +1077,7 @@ anr.launch(
     inbrowser=True,
     share=env.share,
     server_port=env.port,
+    server_name="0.0.0.0",
     favicon_path="./assets/logo.ico",
     allowed_paths=[f"{d}:" for d in string.ascii_uppercase if Path(f"{d}:").exists()],
     auth=[("admin", "admin123"), ("user", "user123")],
