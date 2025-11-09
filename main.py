@@ -64,6 +64,13 @@ from utils.variable import (
     WILDCARD_TYPE,
 )
 
+
+def _settings_tab_visibility(request: gr.Request | None = None):
+    """Toggle settings visibility depending on the authenticated username."""
+    username = getattr(request, "username", None)
+    is_admin = username == "admin"
+    return gr.update(visible=is_admin), gr.update(visible=not is_admin)
+
 with gr.Blocks(
     theme=env.theme if env.theme != "空" else None,
     title="Auto-NovelAI-Refactor",
@@ -942,98 +949,106 @@ with gr.Blocks(
                 if hasattr(plugin_module, "plugin"):
                     plugin_module.plugin()
             with gr.Tab("配置设置"):
-                update_anr_button = gr.Button("更新 ANR")
-                with gr.Row():
-                    setting_modify_button = gr.Button("保存")
-                    setting_restart_button = gr.Button("重启")
-                    setting_restart_button.click(restart)
-                setting_output_information = gr.Textbox(show_label=False, visible=False)
-                token = gr.Textbox(
-                    value=env.token,
-                    label="Token",
-                    lines=2,
-                    visible=True if not env.share else False,
-                )
-                gr.Markdown(
-                    "获取 Token 的方法: [**自述文件**](https://github.com/zhulinyv/Semi-Auto-NovelAI-to-Pixiv#%EF%B8%8F-%E9%85%8D%E7%BD%AE)",
-                    visible=True if not env.share else False,
-                )
-                proxy = gr.Textbox(value=env.proxy, label="代理地址")
-                gr.Markdown("<p>本地代理格式应为: http://127.0.0.1:xxx (xxx 为代理软件的端口号)</p>")
-                custom_path = gr.Textbox(value=env.custom_path, label="自定义路径")
-                gr.Markdown(
-                    "已支持的自动替换路径: <类型>, <日期>, <种子>, <随机字符>, <编号>, 推荐: `<类型>/<日期>/<种子>_<编号>`"
-                )
-                cool_time = gr.Slider(1, 600, env.cool_time, label="冷却时间")
-                gr.Markdown("会上下浮动 1 秒")
-                port = gr.Textbox(value=env.port, label="ANR 的端口号")
-                gr.Markdown("理论范围：1 - 65535")
-                share = gr.Checkbox(value=env.share, label="共享 Gradio 链接")
-                gr.Markdown("生成一个有效期一周的可分享链接, 可以在任意设备上访问")
-                with gr.Row():
-                    start_sound = gr.Checkbox(value=env.start_sound, label="启动提示音")
-                    finish_sound = gr.Checkbox(value=env.finish_sound, label="完成提示音")
-                check_update = gr.Checkbox(value=env.check_update, label="启动时检查更新")
-                theme = gr.Dropdown(
-                    value=env.theme,
-                    choices=[
-                        "空",
-                        "gradio/base",
-                        "gradio/glass",
-                        "gradio/monochrome",
-                        "gradio/seafoam",
-                        "gradio/soft",
-                        "gradio/dracula_test",
-                        "abidlabs/dracula_test",
-                        "abidlabs/Lime",
-                        "abidlabs/pakistan",
-                        "Ama434/neutral-barlow",
-                        "dawood/microsoft_windows",
-                        "finlaymacklon/smooth_slate",
-                        "Franklisi/darkmode",
-                        "freddyaboulton/dracula_revamped",
-                        "freddyaboulton/test-blue",
-                        "gstaff/xkcd",
-                        "Insuz/Mocha",
-                        "Insuz/SimpleIndigo",
-                        "JohnSmith9982/small_and_pretty",
-                        "nota-ai/theme",
-                        "nuttea/Softblue",
-                        "ParityError/Anime",
-                        "reilnuud/polite",
-                        "remilia/Ghostly",
-                        "rottenlittlecreature/Moon_Goblin",
-                        "step-3-profit/Midnight-Deep",
-                        "Taithrah/Minimal",
-                        "ysharma/huggingface",
-                        "ysharma/steampunk",
-                        "NoCrypt/miku",
-                    ],
-                    label="WebUI 主题",
-                    allow_custom_value=True,
-                )
-                gr.Markdown(
-                    f"[切换到浅色页面](http://127.0.0.1:{env.port}/?__theme=light) [切换到深色页面](http://127.0.0.1:{env.port}/?__theme=dark)"
-                )
-                setting_modify_button.click(
-                    modify_env,
-                    inputs=[
-                        token,
-                        proxy,
-                        custom_path,
-                        cool_time,
-                        port,
-                        share,
-                        start_sound,
-                        finish_sound,
-                        check_update,
-                        theme,
-                    ],
-                    outputs=setting_output_information,
-                )
-                update_anr_button.click(
-                    update_repo, inputs=gr.Textbox(BASE_PATH, visible=False), outputs=setting_output_information
-                )
+                with gr.Column(visible=False) as settings_tab_content:
+                    update_anr_button = gr.Button("更新 ANR")
+                    with gr.Row():
+                        setting_modify_button = gr.Button("保存")
+                        setting_restart_button = gr.Button("重启")
+                        setting_restart_button.click(restart)
+                    setting_output_information = gr.Textbox(show_label=False, visible=False)
+                    token = gr.Textbox(
+                        value=env.token,
+                        label="Token",
+                        lines=2,
+                        visible=True if not env.share else False,
+                    )
+                    gr.Markdown(
+                        "获取 Token 的方法: [**自述文件**](https://github.com/zhulinyv/Semi-Auto-NovelAI-to-Pixiv#%EF%B8%8F-%E9%85%8D%E7%BD%AE)",
+                        visible=True if not env.share else False,
+                    )
+                    proxy = gr.Textbox(value=env.proxy, label="代理地址")
+                    gr.Markdown("<p>本地代理格式应为: http://127.0.0.1:xxx (xxx 为代理软件的端口号)</p>")
+                    custom_path = gr.Textbox(value=env.custom_path, label="自定义路径")
+                    gr.Markdown(
+                        "已支持的自动替换路径: <类型>, <日期>, <种子>, <随机字符>, <编号>, 推荐: `<类型>/<日期>/<种子>_<编号>`"
+                    )
+                    cool_time = gr.Slider(1, 600, env.cool_time, label="冷却时间")
+                    gr.Markdown("会上下浮动 1 秒")
+                    port = gr.Textbox(value=env.port, label="ANR 的端口号")
+                    gr.Markdown("理论范围：1 - 65535")
+                    share = gr.Checkbox(value=env.share, label="共享 Gradio 链接")
+                    gr.Markdown("生成一个有效期一周的可分享链接, 可以在任意设备上访问")
+                    with gr.Row():
+                        start_sound = gr.Checkbox(value=env.start_sound, label="启动提示音")
+                        finish_sound = gr.Checkbox(value=env.finish_sound, label="完成提示音")
+                    check_update = gr.Checkbox(value=env.check_update, label="启动时检查更新")
+                    theme = gr.Dropdown(
+                        value=env.theme,
+                        choices=[
+                            "空",
+                            "gradio/base",
+                            "gradio/glass",
+                            "gradio/monochrome",
+                            "gradio/seafoam",
+                            "gradio/soft",
+                            "gradio/dracula_test",
+                            "abidlabs/dracula_test",
+                            "abidlabs/Lime",
+                            "abidlabs/pakistan",
+                            "Ama434/neutral-barlow",
+                            "dawood/microsoft_windows",
+                            "finlaymacklon/smooth_slate",
+                            "Franklisi/darkmode",
+                            "freddyaboulton/dracula_revamped",
+                            "freddyaboulton/test-blue",
+                            "gstaff/xkcd",
+                            "Insuz/Mocha",
+                            "Insuz/SimpleIndigo",
+                            "JohnSmith9982/small_and_pretty",
+                            "nota-ai/theme",
+                            "nuttea/Softblue",
+                            "ParityError/Anime",
+                            "reilnuud/polite",
+                            "remilia/Ghostly",
+                            "rottenlittlecreature/Moon_Goblin",
+                            "step-3-profit/Midnight-Deep",
+                            "Taithrah/Minimal",
+                            "ysharma/huggingface",
+                            "ysharma/steampunk",
+                            "NoCrypt/miku",
+                        ],
+                        label="WebUI 主题",
+                        allow_custom_value=True,
+                    )
+                    gr.Markdown(
+                        f"[切换到浅色页面](http://127.0.0.1:{env.port}/?__theme=light) [切换到深色页面](http://127.0.0.1:{env.port}/?__theme=dark)"
+                    )
+                    setting_modify_button.click(
+                        modify_env,
+                        inputs=[
+                            token,
+                            proxy,
+                            custom_path,
+                            cool_time,
+                            port,
+                            share,
+                            start_sound,
+                            finish_sound,
+                            check_update,
+                            theme,
+                        ],
+                        outputs=setting_output_information,
+                    )
+                    update_anr_button.click(
+                        update_repo, inputs=gr.Textbox(BASE_PATH, visible=False), outputs=setting_output_information
+                    )
+                settings_tab_notice = gr.Markdown("仅管理员可访问配置设置", visible=True)
+
+            anr.load(
+                _settings_tab_visibility,
+                inputs=None,
+                outputs=[settings_tab_content, settings_tab_notice],
+            )
 
     model.change(
         update_components_for_models_change,
